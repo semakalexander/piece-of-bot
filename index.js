@@ -14,7 +14,9 @@ const {
 
 const port = process.env.PORT || 7777;
 const host = process.env.HOST;
-const bot = new TelegramBot(token, { webHook: {port: port, host: host }});
+const externalUrl = 'https://piece-of-bot.herokuapp.com';
+const bot = new TelegramBot(token, { webHook: { port: port, host: host }});
+bot.setWebHook(externalUrl + ':443/bot' + token);
 
 
 generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) => 
