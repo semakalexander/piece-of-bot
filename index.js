@@ -1,4 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
+
 const { token, channelId } = require('./keys');
 const { TYPES } = require('./constants');
 const { generateId, emoji } = require('./util');
@@ -10,7 +11,10 @@ const {
   dislike,
 } = require('./db');
 
-const bot = new TelegramBot(token, { polling: true });
+
+const port = process.env.PORT || 7777;
+const host = process.env.HOST;
+const bot = new TelegramBot(token, { webHook: {port: port, host: host }});
 
 
 generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) => 
