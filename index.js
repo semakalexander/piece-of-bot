@@ -1,5 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
-const { token, channelId } = require('./credentials');
+const { token, channelId } = require('./keys');
 const { TYPES } = require('./constants');
 const { generateId, emoji } = require('./util');
 const {

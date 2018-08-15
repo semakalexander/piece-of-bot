@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { mongoURI } = require('./credentials');
+const { mongoURI } = require('./keys');
 const { NOTIFICATION_MESSAGES } = require('./constants');
 
 mongoose
