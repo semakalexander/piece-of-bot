@@ -1,37 +1,74 @@
-const data = {};
+const mongoose = require('mongoose');
+const { mongoURI } = require('./credentials');
 
-const like = (msgId, userId) => {
-  let resultMsg = 'You liked this photo';
-  if(data[msgId].likes.has(userId)) {
-    data[msgId].likes.delete(userId);
-    resultMsg = 'You unliked this photo'
-  } else {
-    data[msgId].likes.add(userId);
-  }
+mongoose
+  .connect(mongoURI, { useNewUrlParser: true })
+  .then(() => console.log('Mongodb successfully connected'))
+  .catch(err => console.error(err));
 
-  if(data[msgId].dislikes.has(userId)) {
-    data[msgId].dislikes.delete(userId);
-  }
 
-  return resultMsg;
-}
-const dislike = (msgId, userId) => {
-  let resultMsg = 'You disliked this photo';
+const messageRateSchema = new mongoose.Schema({
+  msgId: Number,
+  likes: [Number], // set of users id
+  dislikes: [Number] // set of users id
+});
 
-  if(data[msgId].dislikes.has(userId)) {
-    data[msgId].dislikes.delete(userId);
-    resultMsg = 'You undisliked this photo';    
-  } else {
-    data[msgId].dislikes.add(userId);
-  }
+const MessageRate = mongoose.model('MessageRate', messageRateSchema);
 
-  if(data[msgId].likes.has(userId)) {
-    data[msgId].likes.delete(userId);
-  }
+const createMessageRate = msgId => MessageRate.create({ msgId, likes: [], dislikes: [] });
 
-  return resultMsg;
-};
+const findMessageRates = criteria => MessageRate.find(criteria);
+
+const like = (msgId, userId) => new Promise((resolve, reject) => 
+  MessageRate
+    .findOne({ msgId })
+    .then(record => {
+      let resultMsg = 'You liked this photo';
+
+      if(record.likes.some(id => id === userId)) {
+        record.likes = record.likes.filter(id => id !== userId);
+        resultMsg = 'You unliked this photo';
+      } else {
+        record.likes = [...record.likes, userId];
+      }
+    
+      if(record.dislikes.some(id => id === userId)) {
+        record.dislikes = record.dislikes.filter(id => id !== userId);
+      }
+      
+      record.save().then(() => resolve(resultMsg))
+    })
+    .catch(err => reject(err))
+);
+
+const dislike = (msgId, userId) => new Promise((resolve, reject) =>
+  MessageRate
+    .findOne({ msgId })
+    .then(record => {
+      let resultMsg = 'You disliked this photo';
+
+      if(record.dislikes.some(id => id === userId)) {
+        record.dislikes = record.dislikes.filter(id => id !== userId);
+        resultMsg = 'You undisliked this photo';
+      } else {
+        record.dislikes = [...record.dislikes, userId];
+      }
+    
+      if(record.likes.some(id => id === userId)) {
+        record.likes = record.likes.filter(id => id !== userId);
+      }
+    
+      record.save().then(() => resolve(resultMsg))
+    })
+    .catch(err => reject(err))
+);
+
+const getMessageRates = () => MessageRate.find();
 
 module.exports = {
-  data
+  createMessageRate,
+  findMessageRates,
+  like,
+  dislike,
+  getMessageRates
 };
