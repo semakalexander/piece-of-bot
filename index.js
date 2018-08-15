@@ -1,35 +1,53 @@
 const TelegramBot = require('node-telegram-bot-api');
-const { token } = require('./credentials');
+const { token, channelId } = require('./credentials');
 const { TYPES } = require('./constants');
+const { generateId, emoji } = require('./util');
 const {
   createMessageRate,
   findMessageRates,
   like,
+  okay,
   dislike,
 } = require('./db');
 
 const bot = new TelegramBot(token, { polling: true });
 
-generateReplyMarkup = (msgId) => new Promise((resolve, reject) => 
-  findMessageRates({ msgId })
+
+generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) => 
+  findMessageRates({ id: messageRateId })
       .then(([messageRateInfo]) => {
         let likesAmount = 0;
+        let okaysAmount = 0;
         let dislikesAmount = 0;
 
         if(messageRateInfo) {
           likesAmount = messageRateInfo.likes.length;
+          okaysAmount = messageRateInfo.okays.length;
           dislikesAmount = messageRateInfo.dislikes.length;
         }
       
         resolve({
           inline_keyboard: [[
             { 
-              text: `${TYPES.LIKE.toLowerCase()} (${likesAmount})`,
-              callback_data: TYPES.LIKE
+              text: `${emoji.thumbs_up_emoji} (${likesAmount})`,
+              callback_data: JSON.stringify({
+                type: TYPES.LIKE,
+                messageRateId
+              })
+            },
+            { 
+              text: `${emoji.thumbs_okay_emoji} (${okaysAmount})`,
+              callback_data: JSON.stringify({
+                type: TYPES.OKAY,
+                messageRateId
+              })
             },
             {
-              text: `${TYPES.DISLIKE.toLowerCase()} (${dislikesAmount})`,
-              callback_data: TYPES.DISLIKE
+              text: `${emoji.thumbs_down_emoji} (${dislikesAmount})`,
+              callback_data: JSON.stringify({
+                type: TYPES.DISLIKE,
+                messageRateId
+              })
             }
           ]]
         })
@@ -38,9 +56,13 @@ generateReplyMarkup = (msgId) => new Promise((resolve, reject) =>
 );
 
 
-bot.on('message', msg => {
-  generateReplyMarkup(msg.message_id)
-    .then(reply_markup => bot.sendMessage(msg.chat.id, 'hey', { reply_markup }))
+bot.on('photo', ({ photo }) => {
+  const photoId = photo[photo.length - 1].file_id;
+
+  const messageRateId = generateId();
+
+  generateReplyMarkup(messageRateId)
+    .then(reply_markup => bot.sendPhoto(channelId, photoId, { reply_markup }))
     .catch(err => console.log(err))
 });
 
@@ -48,18 +70,23 @@ bot.on('callback_query', query => {
   const {
     from,
     message: {
-      message_id: msgId,
+      message_id,
       chat: {
         id: chatId
       }
     },
-    data: type
+    data
   } = query;
 
-  findMessageRates({ msgId })
+  const {
+    type,
+    messageRateId
+  } = JSON.parse(data);
+
+  findMessageRates({ id: messageRateId })
     .then(([messageRate]) => {
       if(!messageRate) {
-        return createMessageRate(msgId);
+        return createMessageRate(messageRateId);
       }
 
       return messageRate;
@@ -67,18 +94,20 @@ bot.on('callback_query', query => {
     .then(() => {
       switch(type) {
         case TYPES.LIKE:
-          return like(msgId, from.id);
+          return like(messageRateId, from.id);
+        case TYPES.OKAY:
+          return okay(messageRateId, from.id);
         case TYPES.DISLIKE:
-          return dislike(msgId, from.id);
+          return dislike(messageRateId, from.id);
       }
     })
     .then(resultMsg => {
       bot.answerCallbackQuery(query.id, { text: resultMsg });
     })
-    .then(() => generateReplyMarkup(msgId))
+    .then(() => generateReplyMarkup(messageRateId))
     .then(reply_markup => {
         bot.editMessageReplyMarkup(reply_markup, {
-          message_id: msgId,
+          message_id,
           chat_id: chatId,
         });
     })
