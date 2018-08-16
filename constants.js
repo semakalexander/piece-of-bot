@@ -11,10 +11,17 @@ const NOTIFICATION_MESSAGES = {
   UNOKAY: `You think it's piece of nothing`,
   DISLIKE: `You think it's piece of shit`,
   UNDISLIKE: `You think it's piece of nothing`
-}
+};
+
+const EMOJI = {
+  THUMBS_UP: '❤️',
+  THUMBS_OKAY: '👌🏻',
+  THUMBS_DOWN: '💩'
+};
 
 
 module.exports = {
   TYPES,
-  NOTIFICATION_MESSAGES
+  NOTIFICATION_MESSAGES,
+  EMOJI
 };

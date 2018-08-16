@@ -1,8 +1,8 @@
 const TelegramBot = require('node-telegram-bot-api');
+const uniqid = require('uniqid');
 
 const { token, channelId } = require('./keys');
-const { TYPES } = require('./constants');
-const { generateId, emoji } = require('./util');
+const { TYPES, EMOJI } = require('./constants');
 const {
   createMessageRate,
   findMessageRates,
@@ -35,21 +35,21 @@ generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) =>
         resolve({
           inline_keyboard: [[
             { 
-              text: `${emoji.thumbs_up_emoji} (${likesAmount})`,
+              text: `${EMOJI.THUMBS_UP} (${likesAmount})`,
               callback_data: JSON.stringify({
                 type: TYPES.LIKE,
                 messageRateId
               })
             },
             { 
-              text: `${emoji.thumbs_okay_emoji} (${okaysAmount})`,
+              text: `${EMOJI.THUMBS_OKAY} (${okaysAmount})`,
               callback_data: JSON.stringify({
                 type: TYPES.OKAY,
                 messageRateId
               })
             },
             {
-              text: `${emoji.thumbs_down_emoji} (${dislikesAmount})`,
+              text: `${EMOJI.THUMBS_DOWN} (${dislikesAmount})`,
               callback_data: JSON.stringify({
                 type: TYPES.DISLIKE,
                 messageRateId
@@ -65,7 +65,7 @@ generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) =>
 bot.on('photo', ({ photo }) => {
   const photoId = photo[photo.length - 1].file_id;
 
-  const messageRateId = generateId();
+  const messageRateId = uniqid();
 
   generateReplyMarkup(messageRateId)
     .then(reply_markup => bot.sendPhoto(channelId, photoId, { reply_markup }))
