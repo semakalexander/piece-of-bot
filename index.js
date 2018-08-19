@@ -71,11 +71,11 @@ generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) =>
 
 
 const handleSearch = ({ message, base, keywords }) => {
-  const { text } = message;
+  const { text, message_id } = message;
 
   if(keywords.some(keyword => text.includes(keyword))) {
     const query = textToSearchQuery(text, keywords);
-    return bot.sendMessage(message.chat.id, base + query);
+    return bot.sendMessage(message.chat.id, base + query, { reply_to_message_id: message_id });
   }
 }
 
