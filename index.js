@@ -3,6 +3,7 @@ const uniqid = require('uniqid');
 
 const { token, channelId, channelMusicId } = require('./keys');
 const { TYPES, EMOJI, USER_IDS } = require('./constants');
+const { textToSearchQuery } = require('./helpers');
 const {
   createMessageRate,
   findMessageRates,
@@ -67,6 +68,55 @@ generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) =>
 );
 
 
+
+
+const handleSearch = ({ message, base, keywords }) => {
+  const { text } = message;
+
+  if(keywords.some(keyword => text.includes(keyword))) {
+    const query = textToSearchQuery(text, keywords);
+    return bot.sendMessage(message.chat.id, base + query);
+  }
+}
+
+const handleGoogleSearch = message => {
+  const keywords = ['google ', 'гугл ', 'ggl '];
+  const base = 'https://google.com/search?q=';
+  return handleSearch({ message, base, keywords });
+};
+
+const handleGoogleImagesSearch = message => {
+  const keywords = ['gglimg ', 'gglimgs ', 'googleimages '];
+  const base = 'https://google.com/search?tbm=isch&q=';
+  return handleSearch({ message, base, keywords });
+}
+
+const handleYoutubeSearch = message => {
+  const keywords = ['youtube ',  'ютуб ', 'utube ', 'u2b '];
+  const base = 'https://youtube.com/results?search_query=';
+  return handleSearch({ message, base, keywords });
+}
+
+const handleYoutubeLink = ({ text }) => {
+  const keywords = ['youtu.be', 'youtube.com'];
+  if (keywords.some(keyword => text.includes(keyword))) {
+    sendLinkYoutube(text);
+  }
+};
+
+const sendLinkYoutube = link => {
+  const messageRateId = uniqid();
+  
+  generateReplyMarkup(messageRateId)
+    .then(reply_markup => bot.sendMessage(channelMusicId, link, { reply_markup }))
+    .catch(err => console.log(err));
+}
+
+
+
+
+
+
 bot.on('photo', ({ photo }) => {
   const photoId = photo[photo.length - 1].file_id;
 
@@ -77,19 +127,17 @@ bot.on('photo', ({ photo }) => {
     .catch(err => console.log(err))
 });
 
-bot.on('text', (message) => {
-  const { text } = message;
 
-  if (!text.includes('youtu.be') && !text.includes('youtube')) {
-    return;
-  }
-
-  const messageRateId = uniqid();
+bot.on('text', (message) => {  
+  handleYoutubeLink(message);
   
-  generateReplyMarkup(messageRateId)
-    .then(reply_markup => bot.sendMessage(channelMusicId, text, { reply_markup }))
-    .catch(err => console.log(err));
-})
+  handleYoutubeSearch(message);
+
+  handleGoogleImagesSearch(message);
+
+  handleGoogleSearch(message);
+
+});
 
 bot.on('callback_query', query => {
   const {
