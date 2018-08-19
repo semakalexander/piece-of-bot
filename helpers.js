@@ -5,6 +5,11 @@ const textToSearchQuery = (text, keywords) => encodeURI(
     .replace(/\s/g, '+')
 );
 
+const formatHelpResponse = o =>
+  Object.keys(o).map(key => `*${key}*` + ':\n  ' + `_${o[key]}_`).join('\n\n');
+
+
 module.exports = {
-  textToSearchQuery
+  textToSearchQuery,
+  formatHelpResponse
 };

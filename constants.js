@@ -23,9 +23,41 @@ const USER_IDS = {
   skjerp_deg: 302182560
 };
 
+const KEYWORDS = {
+  googleSearchKeywords: ['google ', 'гугл ', 'ggl '],
+  googleImagesSearchKeywords: ['gglimg ', 'gglimgs ', 'googleimages '],
+  youtubeSearchKeywords: ['youtube ',  'ютуб ', 'utube ', 'u2b '],
+  youtubeLinkKeywords: [
+    'tomusic',
+    '2music',
+    'piecelink',
+    'p-link',
+    'plink',
+    'pieceofmusiclink',
+    'music-link'
+  ],
+  photoToChannelKeywords: [
+    'pic2channel',
+    'pieceofphoto',
+    'pieceofphotos',
+    'img2channel',
+    'post-img',
+    'post-pic',
+    '2photos',
+    '2channel',
+    'pimg',
+    'ppic',
+    '2img',
+    '2pic',
+    '2piece',
+    '2po'
+  ]
+}
+
 module.exports = {
   TYPES,
   NOTIFICATION_MESSAGES,
   EMOJI,
-  USER_IDS
+  USER_IDS,
+  KEYWORDS
 };

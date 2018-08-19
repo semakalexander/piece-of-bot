@@ -2,8 +2,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const uniqid = require('uniqid');
 
 const { token, channelId, channelMusicId } = require('./keys');
-const { TYPES, EMOJI, USER_IDS } = require('./constants');
-const { textToSearchQuery } = require('./helpers');
+const { TYPES, EMOJI, USER_IDS, KEYWORDS } = require('./constants');
+const { textToSearchQuery, formatHelpResponse } = require('./helpers');
 const {
   createMessageRate,
   findMessageRates,
@@ -80,29 +80,48 @@ const handleSearch = ({ message, base, keywords }) => {
 }
 
 const handleGoogleSearch = message => {
-  const keywords = ['google ', 'гугл ', 'ggl '];
   const base = 'https://google.com/search?q=';
-  return handleSearch({ message, base, keywords });
+  return handleSearch({ message, base, keywords: KEYWORDS.googleSearchKeywords });
 };
 
 const handleGoogleImagesSearch = message => {
-  const keywords = ['gglimg ', 'gglimgs ', 'googleimages '];
   const base = 'https://google.com/search?tbm=isch&q=';
-  return handleSearch({ message, base, keywords });
+  return handleSearch({ message, base, keywords: KEYWORDS.googleImagesSearchKeywords });
 }
 
 const handleYoutubeSearch = message => {
-  const keywords = ['youtube ',  'ютуб ', 'utube ', 'u2b '];
   const base = 'https://youtube.com/results?search_query=';
-  return handleSearch({ message, base, keywords });
+  return handleSearch({ message, base, keywords: KEYWORDS.youtubeSearchKeywords });
 }
 
+
 const handleYoutubeLink = ({ text }) => {
-  const keywords = ['youtu.be', 'youtube.com'];
-  if (keywords.some(keyword => text.includes(keyword))) {
-    sendLinkYoutube(text);
+  if (KEYWORDS.youtubeLinkKeywords.some(keyword => text.includes(keyword))) {
+    sendLinkYoutube(KEYWORDS.youtubeLinkKeywords
+      .reduce((str, keyword) => str.replace(keyword, ''))
+      .trim()
+    );
   }
 };
+
+const handleHelpCommand = ({ text, chat }) => {
+  if (text.includes('help')) {
+    const response = {
+      'ggl-srch': 'type "<keyword> <something> (ggl love)',
+      'ggl-srch-keywords': KEYWORDS.googleSearchKeywords.join(' | ') + '\n',
+      'ggl-img-srch': 'type "<keyword> <something> (gglimg love)',
+      'ggl-img-srch-keywords': KEYWORDS.googleImagesSearchKeywords.join(' | ') + '\n',
+      'u2b-srch': 'type "<keyword> <something> (u2b love)',
+      'u2b-srch-keywords': KEYWORDS.youtubeSearchKeywords.join(' | ') + '\n',
+      'u2b-link': 'type "<keyword> <something> (2music http://youtu.be/pXqre4G)',
+      'u2b-link-keywords': KEYWORDS.youtubeLinkKeywords.join(' | ') + '\n',
+      'pic2piece': 'send photo where caption is one of <keywords>',
+      'pic2piece-keywords': KEYWORDS.photoToChannelKeywords.join(' | ')
+    };
+
+    bot.sendMessage(chat.id, formatHelpResponse(response), { parse_mode: 'markdown' });
+  }
+}
 
 const sendLinkYoutube = link => {
   const messageRateId = uniqid();
@@ -116,8 +135,11 @@ const sendLinkYoutube = link => {
 
 
 
+bot.on('photo', ({ photo, caption }) => {
+  if (!caption) return;
 
-bot.on('photo', ({ photo }) => {
+  if (!KEYWORDS.photoToChannelKeywords.some(keyword => caption.includes(keyword))) return;
+ 
   const photoId = photo[photo.length - 1].file_id;
 
   const messageRateId = uniqid();
@@ -137,6 +159,7 @@ bot.on('text', (message) => {
 
   handleGoogleSearch(message);
 
+  handleHelpCommand(message);
 });
 
 bot.on('callback_query', query => {
