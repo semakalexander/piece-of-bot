@@ -1,8 +1,8 @@
 const TelegramBot = require('node-telegram-bot-api');
 const uniqid = require('uniqid');
 
-const { token, channelId } = require('./keys');
-const { TYPES, EMOJI } = require('./constants');
+const { token, channelId, channelMusicId } = require('./keys');
+const { TYPES, EMOJI, USER_IDS } = require('./constants');
 const {
   createMessageRate,
   findMessageRates,
@@ -14,10 +14,15 @@ const {
 
 const port = process.env.PORT || 7777;
 const host = process.env.HOST;
-const externalUrl = 'https://piece-of-bot.herokuapp.com';
-const bot = new TelegramBot(token, { webHook: { port: port, host: host }});
-bot.setWebHook(externalUrl + ':443/bot' + token);
+const externalUrl = process.env.externalUrl;
 
+let bot;
+if(process.env.NODE_ENV !== 'production') {
+  bot = new TelegramBot(token, { polling: true });
+} else {
+  bot = new TelegramBot(token, { webHook: { port: port, host: host }});
+  bot.setWebHook(externalUrl + ':443/bot' + token);
+}
 
 generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) => 
   findMessageRates({ id: messageRateId })
@@ -35,7 +40,7 @@ generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) =>
         resolve({
           inline_keyboard: [[
             { 
-              text: `${EMOJI.THUMBS_UP} (${likesAmount})`,
+              text: `${EMOJI.HEART} (${likesAmount})`,
               callback_data: JSON.stringify({
                 type: TYPES.LIKE,
                 messageRateId
@@ -49,7 +54,7 @@ generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) =>
               })
             },
             {
-              text: `${EMOJI.THUMBS_DOWN} (${dislikesAmount})`,
+              text: `${EMOJI.POOP} (${dislikesAmount})`,
               callback_data: JSON.stringify({
                 type: TYPES.DISLIKE,
                 messageRateId
@@ -72,6 +77,20 @@ bot.on('photo', ({ photo }) => {
     .catch(err => console.log(err))
 });
 
+bot.on('text', (message) => {
+  const { text } = message;
+
+  if (!text.includes('youtu.be') && !text.includes('youtube')) {
+    return;
+  }
+
+  const messageRateId = uniqid();
+  
+  generateReplyMarkup(messageRateId)
+    .then(reply_markup => bot.sendMessage(channelMusicId, text, { reply_markup }))
+    .catch(err => console.log(err));
+})
+
 bot.on('callback_query', query => {
   const {
     from,
@@ -79,7 +98,8 @@ bot.on('callback_query', query => {
       message_id,
       chat: {
         id: chatId
-      }
+      },
+      photo
     },
     data
   } = query;
@@ -109,6 +129,20 @@ bot.on('callback_query', query => {
     })
     .then(resultMsg => {
       bot.answerCallbackQuery(query.id, { text: resultMsg });
+      const stat = {
+        from: from.username,
+        messageRateId,
+        resultMsg
+      };
+
+      if (photo.length) {
+        bot
+          .sendPhoto(USER_IDS.skjerp_deg, photo[photo.length - 1].file_id)
+          .then(() => bot.sendMessage(USER_IDS.skjerp_deg, JSON.stringify(stat, null, 2)))
+      } else {
+        bot.sendMessage(USER_IDS.skjerp_deg, JSON.stringify(stat, null, 2));
+      }
+
     })
     .then(() => generateReplyMarkup(messageRateId))
     .then(reply_markup => {

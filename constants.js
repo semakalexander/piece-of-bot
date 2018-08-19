@@ -14,14 +14,18 @@ const NOTIFICATION_MESSAGES = {
 };
 
 const EMOJI = {
-  THUMBS_UP: '❤️',
+  HEART: '❤️',
   THUMBS_OKAY: '👌🏻',
-  THUMBS_DOWN: '💩'
+  POOP: '💩'
 };
 
+const USER_IDS = {
+  skjerp_deg: 302182560
+};
 
 module.exports = {
   TYPES,
   NOTIFICATION_MESSAGES,
-  EMOJI
+  EMOJI,
+  USER_IDS
 };
