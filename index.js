@@ -98,7 +98,7 @@ const handleYoutubeSearch = message => {
 const handleYoutubeLink = ({ text }) => {
   if (KEYWORDS.youtubeLinkKeywords.some(keyword => text.includes(keyword))) {
     sendLinkYoutube(KEYWORDS.youtubeLinkKeywords
-      .reduce((str, keyword) => str.replace(keyword, ''))
+      .reduce((str, keyword) => str.replace(keyword, ''), text)
       .trim()
     );
   }
