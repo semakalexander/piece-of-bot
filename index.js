@@ -29,15 +29,9 @@ if(process.env.NODE_ENV !== 'production') {
 generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) => 
   findMessageRates({ id: messageRateId })
       .then(([messageRateInfo]) => {
-        let likesAmount = 0;
-        let okaysAmount = 0;
-        let dislikesAmount = 0;
-
-        if(messageRateInfo) {
-          likesAmount = messageRateInfo.likes.length;
-          okaysAmount = messageRateInfo.okays.length;
-          dislikesAmount = messageRateInfo.dislikes.length;
-        }
+        likesAmount = messageRateInfo.likes.length;
+        okaysAmount = messageRateInfo.okays.length;
+        dislikesAmount = messageRateInfo.dislikes.length;
       
         resolve({
           inline_keyboard: [[
@@ -136,16 +130,17 @@ const sendLinkYoutube = link => {
 
 
 
-bot.on('photo', ({ photo, caption }) => {
-  if (!caption) return;
-
-  if (!KEYWORDS.photoToChannelKeywords.some(keyword => caption.includes(keyword))) return;
+bot.on('photo', ({ photo, caption, chat, from }) => {
+  const isDirectMessage = chat.id === from.id;
+  if (!isDirectMessage &&
+    (!caption || !KEYWORDS.photoToChannelKeywords.some(keyword => caption.includes(keyword)))) return;
  
   const photoId = photo[photo.length - 1].file_id;
 
   const messageRateId = uniqid();
 
-  generateReplyMarkup(messageRateId)
+  createMessageRate(messageRateId, photoId)
+    .then(() => generateReplyMarkup(messageRateId))
     .then(reply_markup => bot.sendPhoto(channelId, photoId, { reply_markup }))
     .catch(err => console.log(err))
 });

@@ -12,7 +12,8 @@ const messageRateSchema = new mongoose.Schema({
   id: String,
   likes: [{}], // set of users id,
   okays: [{}], // set of users id
-  dislikes: [{}] // set of users id
+  dislikes: [{}], // set of users id
+  photoId: String
 });
 
 const statisticsSchema = new mongoose.Schema({
@@ -38,7 +39,12 @@ const like = (id, user) => new Promise((resolve, reject) =>
         record.likes = record.likes.filter(u => u.id !== user.id);
         resultMsg = NOTIFICATION_MESSAGES.UNLIKE;
       } else {
-        record.likes = [...record.likes, user];
+        record.likes = [...record.likes, {
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          username: user.username,
+        }];
       }
     
       if(record.dislikes.some(u => u.id === user.id)) {
@@ -64,7 +70,12 @@ const okay = (id, user) => new Promise((resolve, reject) =>
         record.okays = record.okays.filter(u => u.id !== user.id);
         resultMsg = NOTIFICATION_MESSAGES.UNOKAY;
       } else {
-        record.okays = [...record.okays, user];
+        record.okays = [...record.okays, {
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          username: user.username,
+        }];
       }
 
       if(record.likes.some(u => u.id === user.id)) {
@@ -89,7 +100,12 @@ const dislike = (id, user) => new Promise((resolve, reject) =>
         record.dislikes = record.dislikes.filter(id => id !== user.id);
         resultMsg = NOTIFICATION_MESSAGES.UNDISLIKE;
       } else {
-        record.dislikes = [...record.dislikes, user];
+        record.dislikes = [...record.dislikes, {
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          username: user.username,
+        }];
       }
     
       if(record.likes.some(u => u.id === user.id)) {
