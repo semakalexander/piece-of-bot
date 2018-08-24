@@ -10,9 +10,9 @@ mongoose
 
 const messageRateSchema = new mongoose.Schema({
   id: String,
-  likes: [Number], // set of users id,
-  okays: [Number], // set of users id
-  dislikes: [Number] // set of users id
+  likes: [{}], // set of users id,
+  okays: [{}], // set of users id
+  dislikes: [{}] // set of users id
 });
 
 const statisticsSchema = new mongoose.Schema({
