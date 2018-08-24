@@ -20,7 +20,14 @@ const EMOJI = {
 };
 
 const USER_IDS = {
-  skjerp_deg: 302182560
+  skjerp_deg: 302182560,
+  doom: 243295577,
+  tochu: 225915674,
+  curly: 506056835,
+  princess: 690556784,
+  driver: 478096425,
+  andy: 591260739,
+  kitty: 414882105
 };
 
 const KEYWORDS = {

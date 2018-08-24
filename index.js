@@ -10,6 +10,7 @@ const {
   like,
   okay,
   dislike,
+  updateStats
 } = require('./db');
 
 
@@ -180,10 +181,12 @@ bot.on('callback_query', query => {
     messageRateId
   } = JSON.parse(data);
 
+  const photoId = photo.length ? photo[photo.length - 1].file_id : 'none';
+
   findMessageRates({ id: messageRateId })
     .then(([messageRate]) => {
       if(!messageRate) {
-        return createMessageRate(messageRateId);
+        return createMessageRate(messageRateId, photoId);
       }
 
       return messageRate;
@@ -191,29 +194,30 @@ bot.on('callback_query', query => {
     .then(() => {
       switch(type) {
         case TYPES.LIKE:
-          return like(messageRateId, from.id);
+          return like(messageRateId, from);
         case TYPES.OKAY:
-          return okay(messageRateId, from.id);
+          return okay(messageRateId, from);
         case TYPES.DISLIKE:
-          return dislike(messageRateId, from.id);
+          return dislike(messageRateId, from);
       }
     })
     .then(resultMsg => {
       bot.answerCallbackQuery(query.id, { text: resultMsg });
       const stat = {
-        from: from.username,
+        from,
         messageRateId,
         resultMsg
       };
 
       if (photo.length) {
         bot
-          .sendPhoto(USER_IDS.skjerp_deg, photo[photo.length - 1].file_id)
+          .sendPhoto(USER_IDS.skjerp_deg, photoId)
           .then(() => bot.sendMessage(USER_IDS.skjerp_deg, JSON.stringify(stat, null, 2)))
       } else {
         bot.sendMessage(USER_IDS.skjerp_deg, JSON.stringify(stat, null, 2));
       }
 
+      updateStats();
     })
     .then(() => generateReplyMarkup(messageRateId))
     .then(reply_markup => {

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { mongoURI } = require('./keys');
-const { NOTIFICATION_MESSAGES } = require('./constants');
+const { NOTIFICATION_MESSAGES, USER_IDS } = require('./constants');
 
 mongoose
   .connect(mongoURI, { useNewUrlParser: true })
@@ -15,31 +15,38 @@ const messageRateSchema = new mongoose.Schema({
   dislikes: [Number] // set of users id
 });
 
-const MessageRate = mongoose.model('MessageRate', messageRateSchema);
+const statisticsSchema = new mongoose.Schema({
+  id: String,
+  data: {}
+});
 
-const createMessageRate = id => MessageRate.create({ id, likes: [], okays: [], dislikes: [] });
+
+const MessageRate = mongoose.model('MessageRate', messageRateSchema);
+const Statistics = mongoose.model('Statistics', statisticsSchema);
+
+const createMessageRate = (id, photoId) => MessageRate.create({ id, likes: [], okays: [], dislikes: [], photoId });
 
 const findMessageRates = criteria => MessageRate.find(criteria);
 
-const like = (id, userId) => new Promise((resolve, reject) => 
+const like = (id, user) => new Promise((resolve, reject) => 
   MessageRate
     .findOne({ id })
     .then(record => {
       let resultMsg = NOTIFICATION_MESSAGES.LIKE;
 
-      if(record.likes.some(id => id === userId)) {
-        record.likes = record.likes.filter(id => id !== userId);
+      if(record.likes.some(u => u.id === user.id)) {
+        record.likes = record.likes.filter(u => u.id !== user.id);
         resultMsg = NOTIFICATION_MESSAGES.UNLIKE;
       } else {
-        record.likes = [...record.likes, userId];
+        record.likes = [...record.likes, user];
       }
     
-      if(record.dislikes.some(id => id === userId)) {
-        record.dislikes = record.dislikes.filter(id => id !== userId);
+      if(record.dislikes.some(u => u.id === user.id)) {
+        record.dislikes = record.dislikes.filter(u => u.id !== user.id);
       }
 
-      if(record.okays.some(id => id === userId)) {
-        record.okays = record.okays.filter(id => id !== userId);
+      if(record.okays.some(u => u.id === user.id)) {
+        record.okays = record.okays.filter(u => u.id !== user.id);
       }
       
       record.save().then(() => resolve(resultMsg))
@@ -47,50 +54,50 @@ const like = (id, userId) => new Promise((resolve, reject) =>
     .catch(err => reject(err))
 );
 
-const okay = (id, userId) => new Promise((resolve, reject) => 
+const okay = (id, user) => new Promise((resolve, reject) => 
   MessageRate
     .findOne({ id })
     .then(record => {
       let resultMsg = NOTIFICATION_MESSAGES.OKAY;
 
-      if(record.okays.some(id => id === userId)) {
-        record.okays = record.okays.filter(id => id !== userId);
+      if(record.okays.some(u => u.id === user.id)) {
+        record.okays = record.okays.filter(u => u.id !== user.id);
         resultMsg = NOTIFICATION_MESSAGES.UNOKAY;
       } else {
-        record.okays = [...record.okays, userId];
+        record.okays = [...record.okays, user];
       }
 
-      if(record.likes.some(id => id === userId)) {
-        record.likes = record.likes.filter(id => id !== userId);
+      if(record.likes.some(u => u.id === user.id)) {
+        record.likes = record.likes.filter(u => u.id !== user.id);
       }
 
-      if(record.dislikes.some(id => id === userId)) {
-        record.dislikes = record.dislikes.filter(id => id !== userId);
+      if(record.dislikes.some(u => u.id === user.id)) {
+        record.dislikes = record.dislikes.filter(u => u.id !== user.id);
       }
 
       record.save().then(() => resolve(resultMsg));
     })
 );
 
-const dislike = (id, userId) => new Promise((resolve, reject) =>
+const dislike = (id, user) => new Promise((resolve, reject) =>
   MessageRate
     .findOne({ id })
     .then(record => {
       let resultMsg = NOTIFICATION_MESSAGES.DISLIKE;
 
-      if(record.dislikes.some(id => id === userId)) {
-        record.dislikes = record.dislikes.filter(id => id !== userId);
+      if(record.dislikes.some(u => u.id === user.id)) {
+        record.dislikes = record.dislikes.filter(id => id !== user.id);
         resultMsg = NOTIFICATION_MESSAGES.UNDISLIKE;
       } else {
-        record.dislikes = [...record.dislikes, userId];
+        record.dislikes = [...record.dislikes, user];
       }
     
-      if(record.likes.some(id => id === userId)) {
-        record.likes = record.likes.filter(id => id !== userId);
+      if(record.likes.some(u => u.id === user.id)) {
+        record.likes = record.likes.filter(u => u !== user.id);
       }
 
-      if(record.okays.some(id => id === userId)) {
-        record.okays = record.okays.filter(id => id !== userId);
+      if(record.okays.some(u => u.id === user.id)) {
+        record.okays = record.okays.filter(u => u.id !== user.id);
       }
     
       record.save().then(() => resolve(resultMsg))
@@ -100,11 +107,46 @@ const dislike = (id, userId) => new Promise((resolve, reject) =>
 
 const getMessageRates = () => MessageRate.find();
 
+
+const collectIdsByType = (o, rate, type) => {
+  rate[type].forEach(u => {
+    let id = u.id || u;
+
+    const entry = Object.entries(USER_IDS).find(([key, value]) => value === id);
+    id = entry ? entry[0] : id;
+    
+    if(!o[id]) {
+      o[id] = {
+        likes: [],
+        okays: [],
+        dislikes: []
+      }
+    }
+
+    o[id][type].push({ photoId: rate.photoId, rateId: rate.id });
+  })
+}
+
+const updateStats = () =>
+  Statistics
+    .remove({})
+    .then(() => MessageRate.find({}))
+    .then(rates => rates
+      .reduce((o, rate) => {
+        collectIdsByType(o, rate, 'likes');
+        collectIdsByType(o, rate, 'okays');
+        collectIdsByType(o, rate, 'dislikes');
+        return o;
+      }, {})
+    )
+    .then(data => Statistics.create({ data }));
+
 module.exports = {
   createMessageRate,
   findMessageRates,
   like,
   okay,
   dislike,
-  getMessageRates
+  getMessageRates,
+  updateStats
 };
