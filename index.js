@@ -118,15 +118,7 @@ const handleHelpCommand = ({ text, chat }) => {
   }
 }
 
-const sendLinkYoutube = link => {
-  const messageRateId = uniqid();
-  
-  generateReplyMarkup(messageRateId)
-    .then(reply_markup => bot.sendMessage(channelMusicId, link, { reply_markup }))
-    .catch(err => console.log(err));
-}
-
-
+const sendLinkYoutube = link => bot.sendMessage(channelMusicId, link);
 
 
 
