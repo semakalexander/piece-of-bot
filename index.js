@@ -126,10 +126,12 @@ const handleHelpCommand = ({ text, chat }) => {
       'ggl-img-srch-keywords': KEYWORDS.googleImagesSearchKeywords.join(' | ') + '\n',
       'u2b-srch': 'type "<keyword> <something> (u2b love)',
       'u2b-srch-keywords': KEYWORDS.youtubeSearchKeywords.join(' | ') + '\n',
-      'u2b-link': 'type "<keyword> <something> (2music http://youtu.be/pXqre4G)',
-      'u2b-link-keywords': KEYWORDS.youtubeLinkKeywords.join(' | ') + '\n',
-      'pic2piece': 'send photo where caption is one of <keywords>',
-      'pic2piece-keywords': KEYWORDS.photoToChannelKeywords.join(' | ')
+      // 'u2b-link': 'type "<keyword> <something> (2music http://youtu.be/pXqre4G)',
+      // 'u2b-link-keywords': KEYWORDS.youtubeLinkKeywords.join(' | ') + '\n',
+      // 'pic2piece': 'send photo where caption is one of <keywords>',
+      // 'pic2piece-keywords': KEYWORDS.photoToChannelKeywords.join(' | ') + '\n',
+      'translate': 'type "<keyword> <something> (trn bubble)',
+      'translate-keywords': KEYWORDS.translateKeywords.join(' | '),
     };
 
     bot.sendMessage(chat.id, formatHelpResponse(response), { parse_mode: 'markdown' });
