@@ -1,7 +1,9 @@
 const TelegramBot = require('node-telegram-bot-api');
 const uniqid = require('uniqid');
+const {Translate} = require('@google-cloud/translate');
+require('dotenv').config();
 
-const { token, channelId, channelMusicId } = require('./keys');
+const { token, channelId, channelMusicId, translateProjectId } = require('./keys');
 const { TYPES, EMOJI, USER_IDS, KEYWORDS } = require('./constants');
 const { textToSearchQuery, formatHelpResponse } = require('./helpers');
 const {
@@ -25,6 +27,8 @@ if(process.env.NODE_ENV !== 'production') {
   bot = new TelegramBot(token, { webHook: { port: port, host: host }});
   bot.setWebHook(externalUrl + ':443/bot' + token);
 }
+
+const translate = new Translate({ projectId: translateProjectId });
 
 generateReplyMarkup = (messageRateId) => new Promise((resolve, reject) => 
   findMessageRates({ id: messageRateId })
@@ -99,6 +103,16 @@ const handleYoutubeLink = ({ text }) => {
   }
 };
 
+const handleTranslate = async ({ text, chat, message_id }) => {
+  if (KEYWORDS.translateKeywords.some(keyword => text.includes(keyword))) {
+    console.log(text)
+    const textWithoutKeywords = textToSearchQuery(text, KEYWORDS.translateKeywords);
+    const [ result ] = await translate.translate(textWithoutKeywords, 'uk');
+
+    return bot.sendMessage(chat.id, result, { reply_to_message_id: message_id });
+  }
+}
+
 const handleHelpCommand = ({ text, chat }) => {
   if (text.includes('help')) {
     const response = {
@@ -138,7 +152,9 @@ bot.on('photo', ({ photo, caption, chat, from }) => {
 });
 
 
-bot.on('text', (message) => {  
+bot.on('text', (message) => { 
+  console.log(message); 
+
   handleYoutubeLink(message);
   
   handleYoutubeSearch(message);
@@ -148,6 +164,8 @@ bot.on('text', (message) => {
   handleGoogleSearch(message);
 
   handleHelpCommand(message);
+
+  handleTranslate(message);
 });
 
 bot.on('callback_query', query => {

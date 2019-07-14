@@ -58,6 +58,17 @@ const KEYWORDS = {
     '2pic',
     '2piece',
     '2po'
+  ],
+  translateKeywords: [
+    'translate',
+    'trn',
+    'google-translate',
+    'google translate',
+    'ggl-translate',
+    'ggl translate',
+    'ggltrn',
+    'ggltranlate',
+    'переклад'
   ]
 }
 
