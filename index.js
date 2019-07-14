@@ -106,7 +106,11 @@ const handleYoutubeLink = ({ text }) => {
 const handleTranslate = async ({ text, chat, message_id }) => {
   if (KEYWORDS.translateKeywords.some(keyword => text.includes(keyword))) {
     console.log(text)
-    const textWithoutKeywords = textToSearchQuery(text, KEYWORDS.translateKeywords);
+    const textWithoutKeywords = text
+      .split(' ')
+      .filter(v => !KEYWORDS.translateKeywords.includes(v))
+      .join(' ');
+
     const [ result ] = await translate.translate(textWithoutKeywords, 'uk');
 
     return bot.sendMessage(chat.id, result, { reply_to_message_id: message_id });
